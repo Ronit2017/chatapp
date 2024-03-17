@@ -1,6 +1,6 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
-// import { getReceiverSocketId, io } from "../socket/socket.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
 	try {
@@ -20,12 +20,12 @@ export const sendMessage = async (req, res) => {
 
 		const newMessage = new Message({
 			senderId,
-			receiverId,
+			receiveId: receiverId,
 			message,
 		});
 
 		if (newMessage) {
-			conversation.messages.push(newMessage._id);
+			conversation.message.push(newMessage._id);
 		}
 
 		// await conversation.save();
@@ -35,6 +35,7 @@ export const sendMessage = async (req, res) => {
 		await Promise.all([conversation.save(), newMessage.save()]);
 
 		// SOCKET IO FUNCTIONALITY WILL GO HERE
+
 		const receiverSocketId = getReceiverSocketId(receiverId);
 		if (receiverSocketId) {
 			// io.to(<socket_id>).emit() used to send events to specific client
@@ -55,11 +56,11 @@ export const getMessages = async (req, res) => {
 
 		const conversation = await Conversation.findOne({
 			participants: { $all: [senderId, userToChatId] },
-		}).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
+		}).populate("message"); // NOT REFERENCE BUT ACTUAL MESSAGES
 
 		if (!conversation) return res.status(200).json([]);
 
-		const messages = conversation.messages;
+		const messages = conversation.message;
 
 		res.status(200).json(messages);
 	} catch (error) {
